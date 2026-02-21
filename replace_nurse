@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เบิก Kit ทดแทน - PharmaKit</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <style>
+        body { background-color: #F0F4F3; font-family: 'Kanit', sans-serif; }
+        .card { border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: none; }
+        .pastel-header { background-color: #015958; color: white; border-radius: 15px 15px 0 0; padding: 15px; text-align: center; }
+        .label { color: #4A4A4A; font-weight: 500; }
+        .button.is-primary { background-color: #80CBC4; color: #015958; border: none; font-weight: bold; } /* สีพาสเทลเภสัช */
+        .button.is-primary:hover { background-color: #4DB6AC; }
+        .input-prefix { background-color: #E0E0E0; border-radius: 8px 0 0 8px; padding: 7px 15px; font-weight: bold; display: flex; align-items: center; }
+        .input-main { border-radius: 0 8px 8px 0 !important; }
+        .drug-results { border: 1px solid #ddd; border-top: none; max-height: 150px; overflow-y: auto; display: none; }
+        .drug-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .drug-item:hover { background-color: #F5F5F5; }
+    </style>
+</head>
+<body>
+    <section class="section">
+        <div class="container">
+            <div class="card">
+                <div class="pastel-header">
+                    <h1 class="title is-5 has-text-white">📋 แบบฟอร์มขอเบิก Kit ทดแทน</h1>
+                </div>
+                <div class="card-content">
+                    <div class="field">
+                        <label class="label">รหัส Kit ID (เติมเลข 3 หลัก)</label>
+                        <div class="field has-addons">
+                            <div class="control"><span class="input-prefix">EX-</span></div>
+                            <div class="control is-expanded">
+                                <input class="input input-main" type="number" id="kitNum" placeholder="เช่น 001" oninput="checkKitID(this.value)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field" id="wardField">
+                        <label class="label">หอผู้ป่วย</label>
+                        <div class="control">
+                            <input class="input" type="text" id="wardName" placeholder="ระบบจะค้นหาอัตโนมัติ..." readonly onclick="enableEdit(this)">
+                        </div>
+                        <p class="help is-info" id="wardStatus">กรอกเลข Kit เพื่อค้นหาวอร์ด</p>
+                    </div>
+
+                    <hr>
+
+                    <div class="field">
+                        <label class="label">ชื่อยาที่เกิด Extravasation</label>
+                        <div class="control">
+                            <input class="input" type="text" id="drugInput" placeholder="พิมพ์ชื่อยา 3-4 ตัวอักษร..." oninput="smartSearchDrug(this.value)">
+                        </div>
+                        <div id="drugResults" class="drug-results content is-small"></div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">ตำแหน่งที่ให้ยา</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select id="position">
+                                    <option value="หลังมือ">หลังมือ (Dorsum of hand)</option>
+                                    <option value="ข้อมือ">ข้อมือ (Wrist)</option>
+                                    <option value="หน้าแขน">หน้าแขน (Forearm)</option>
+                                    <option value="ตำแหน่งอื่น">ตำแหน่งอื่น</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">การประเมินความรุนแรง (Grade)</label>
+                        <div class="control">
+                            <div class="buttons has-addons is-centered">
+                                <button class="button" onclick="setGrade(0)">0</button>
+                                <button class="button" onclick="setGrade(1)">1</button>
+                                <button class="button" onclick="setGrade(2)">2</button>
+                                <button class="button" onclick="setGrade(3)">3</button>
+                                <button class="button" onclick="setGrade(4)">4</button>
+                            </div>
+                            <input type="hidden" id="selectedGrade" value="">
+                        </div>
+                    </div>
+
+                    <button class="button is-primary is-fullwidth is-large mt-5" onclick="submitReplacement()">
+                        🚀 ส่งคำขอเบิก Kit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // ข้อมูลตัวอย่าง (ในระบบจริงจะดึงจาก Google Sheet ผ่านการส่งข้อความถามบอท)
+        const drugMaster = ["Arsenic trioxide", "Bortezomib", "Doxorubicin", "Oxaliplatin", "Paclitaxel", "Vincristine"];
+
+        async function init() {
+            await liff.init({ liffId: "ใส่_LIFF_ID_ของคุณที่นี่" });
+            if (!liff.isLoggedIn()) liff.login();
+        }
+        init();
+
+        function checkKitID(val) {
+            if (val.length === 3) {
+                // จำลองการค้นหาหอผู้ป่วย
+                document.getElementById('wardName').value = "ภูมิสิริ 19C"; 
+                document.getElementById('wardStatus').innerText = "✅ พบวอร์ดต้นทาง (คลิกเพื่อแก้ไขถ้าไม่ถูกต้อง)";
+            }
+        }
+
+        function enableEdit(el) { el.readOnly = false; el.placeholder = "กรุณากรอกชื่อวอร์ด..."; }
+
+        function smartSearchDrug(val) {
+            const resDiv = document.getElementById('drugResults');
+            if (val.length >= 3) {
+                const filtered = drugMaster.filter(d => d.toLowerCase().includes(val.toLowerCase()));
+                resDiv.innerHTML = filtered.map(d => `<div class="drug-item" onclick="selectDrug('${d}')">${d}</div>`).join('');
+                resDiv.style.display = 'block';
+            } else { resDiv.style.display = 'none'; }
+        }
+
+        function selectDrug(name) {
+            document.getElementById('drugInput').value = name;
+            document.getElementById('drugResults').style.display = 'none';
+        }
+
+        function setGrade(g) {
+            document.getElementById('selectedGrade').value = g;
+            const btns = document.querySelectorAll('.buttons .button');
+            btns.forEach(b => b.classList.remove('is-info', 'is-selected'));
+            btns[g].classList.add('is-info', 'is-selected');
+        }
+
+        async function submitReplacement() {
+            const data = {
+                kitId: "EX-" + document.getElementById('kitNum').value,
+                ward: document.getElementById('wardName').value,
+                drug: document.getElementById('drugInput').value,
+                pos: document.getElementById('position').value,
+                grade: document.getElementById('selectedGrade').value
+            };
+
+            if (!document.getElementById('kitNum').value || !data.drug || data.grade === "") {
+                alert("กรุณากรอกข้อมูลให้ครบถ้วน"); return;
+            }
+
+            // ส่งข้อมูลกลับเป็น String เพื่อให้ 02_Flow_Nurse.gs ประมวลผล
+            const msg = `REQ_REPLACEMENT|${data.kitId}|${data.ward}|${data.drug}|${data.pos}|${data.grade}`;
+            
+            await liff.sendMessages([{ "type": "text", "text": msg }]);
+            liff.closeWindow();
+        }
+    </script>
+</body>
+</html>
