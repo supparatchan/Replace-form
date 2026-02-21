@@ -100,14 +100,14 @@
     <script>
         const drugMaster = ["Arsenic trioxide", "Bortezomib", "Doxorubicin", "Fluorouracil", "Oxaliplatin", "Paclitaxel", "Vincristine","Vinblastine","Docetaxel","Dactinomycin","Bleomycin","Busulfan","Carboplatin","Cisplatin","Cyclophosphamide","Etoposide"];
         async function init() {
-            await liff.init({ liffId: "2009181600-gwOEGw9p" });
-            if (!liff.isLoggedIn()) {
-            liff.login();
-            } else {
-        // ✨ ตรวจสอบว่า User ยอมรับสิทธิ์ส่งข้อความหรือยัง
-        const profile = await liff.getProfile();
-        console.log("Permissions:", liff.getFeatures()); 
-        
+    await liff.init({ liffId: "ใ2009181600-gwOEGw9p" });
+    if (liff.isLoggedIn()) {
+        // ✨ บังคับให้หน้า Consent เด้งขึ้นมาใหม่เพื่อขอสิทธิ์ chat_message.write
+        liff.login({ prompt: 'consent' }); 
+    } else {
+        liff.login();
+    }
+}
         // ถ้าไม่มีสิทธิ์ส่งข้อความ ให้แจ้งเตือนก่อนกดส่งจริง
         if (!liff.isInClient()) {
             alert("กรุณาเปิดแอปนี้ภายในแอป LINE เท่านั้น");
