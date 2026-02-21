@@ -18,6 +18,46 @@
         .drug-results { border: 1px solid #ddd; border-top: none; max-height: 150px; overflow-y: auto; display: none; }
         .drug-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .drug-item:hover { background-color: #F5F5F5; }
+        /* สไตล์สำหรับการเลือก Grade แบบ Card */
+.grade-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+.grade-item {
+    background-color: #E0F2F1; /* สีพาสเทลอ่อนทึบ */
+    border: 2px solid #B2DFDB;
+    border-radius: 12px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    color: #015958;
+}
+.grade-item:hover {
+    background-color: #B2DFDB;
+}
+.grade-item.active {
+    background-color: #015958 !important; /* สีเขียวเข้มตามแบรนด์ */
+    color: #ffffff !important;
+    border-color: #015958;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(1, 89, 88, 0.2);
+}
+.grade-badge {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+}
     </style>
 </head>
 <body>
@@ -71,18 +111,31 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">การประเมินความรุนแรง (Grade)</label>
-                        <div class="control">
-                            <div class="buttons has-addons is-centered">
-                                <button class="button" onclick="setGrade(0)">0</button>
-                                <button class="button" onclick="setGrade(1)">1</button>
-                                <button class="button" onclick="setGrade(2)">2</button>
-                                <button class="button" onclick="setGrade(3)">3</button>
-                                <button class="button" onclick="setGrade(4)">4</button>
-                            </div>
-                            <input type="hidden" id="selectedGrade" value="">
-                        </div>
-                    </div>
+    <label class="label">การประเมินความรุนแรง (Grade)</label>
+    <div class="grade-container">
+        <div class="grade-item" onclick="setGrade(0)" id="g0">
+            <span>ระดับ 0: No symptoms</span>
+            <span class="grade-badge">0</span>
+        </div>
+        <div class="grade-item" onclick="setGrade(1)" id="g1">
+            <span>ระดับ 1: Mild symptoms</span>
+            <span class="grade-badge">1</span>
+        </div>
+        <div class="grade-item" onclick="setGrade(2)" id="g2">
+            <span>ระดับ 2: Moderate symptoms</span>
+            <span class="grade-badge">2</span>
+        </div>
+        <div class="grade-item" onclick="setGrade(3)" id="g3">
+            <span>ระดับ 3: Severe symptoms</span>
+            <span class="grade-badge">3</span>
+        </div>
+        <div class="grade-item" onclick="setGrade(4)" id="g4">
+            <span>ระดับ 4: Life-threatening</span>
+            <span class="grade-badge">4</span>
+        </div>
+    </div>
+    <input type="hidden" id="grade" value="">
+</div>
 
                     <button class="button is-primary is-fullwidth is-large mt-5" onclick="submitReplacement()">
                         🚀 ส่งคำขอเบิก Kit
@@ -126,12 +179,15 @@
             document.getElementById('drugResults').style.display = 'none';
         }
 
-        function setGrade(g) {
-            document.getElementById('selectedGrade').value = g;
-            const btns = document.querySelectorAll('.buttons .button');
-            btns.forEach(b => b.classList.remove('is-info', 'is-selected'));
-            btns[g].classList.add('is-info', 'is-selected');
-        }
+     function setGrade(g) {
+    document.getElementById('grade').value = g;
+    // ล้างสถานะ active ของทุกตัว
+    const items = document.querySelectorAll('.grade-item');
+    items.forEach(item => item.classList.remove('active'));
+    
+    // เพิ่มสถานะ active ให้ตัวที่เลือก
+    document.getElementById('g' + g).classList.add('active');
+    }
 
         async function submitReplacement() {
             const data = {
