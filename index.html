@@ -98,22 +98,17 @@
     </section>
 
     <script>
-        const drugMaster = ["Arsenic trioxide", "Bortezomib", "Doxorubicin", "Fluorouracil", "Oxaliplatin", "Paclitaxel", "Vincristine","Vinblastine","Docetaxel","Dactinomycin","Bleomycin","Busulfan","Carboplatin","Cisplatin","Cyclophosphamide","Etoposide"];
+        const drugMaster = ["Arsenic trioxide", "Bortezomib", "Cyclophosphamide", "Doxorubicin", "Fluorouracil", "Oxaliplatin", "Paclitaxel", "Vincristine"];
+
         async function init() {
-    await liff.init({ liffId: "ใ2009181600-gwOEGw9p" });
-    if (liff.isLoggedIn()) {
-        // ✨ บังคับให้หน้า Consent เด้งขึ้นมาใหม่เพื่อขอสิทธิ์ chat_message.write
-        liff.login({ prompt: 'consent' }); 
-    } else {
-        liff.login();
-    }
-}
-        // ถ้าไม่มีสิทธิ์ส่งข้อความ ให้แจ้งเตือนก่อนกดส่งจริง
-        if (!liff.isInClient()) {
-            alert("กรุณาเปิดแอปนี้ภายในแอป LINE เท่านั้น");
+            try {
+                // 🚩 อย่าลืมเปลี่ยนเป็น LIFF ID ของคุณ
+                await liff.init({ liffId: "2009181600-gwOEGw9p" }); 
+                if (!liff.isLoggedIn()) liff.login();
+            } catch (err) { console.error("LIFF Init Error", err); }
         }
-    }
-}
+        init();
+
         function checkKitID(val) {
             if (val.length === 3) {
                 document.getElementById('wardName').value = "กำลังค้นหา..."; // จำลอง
