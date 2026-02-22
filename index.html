@@ -98,7 +98,26 @@
     </section>
 
     <script>
-        const drugMaster = ["Arsenic trioxide", "Bortezomib", "Cyclophosphamide", "Doxorubicin", "Fluorouracil", "Oxaliplatin", "Paclitaxel", "Vincristine"];
+     //
+const drugList = [
+    { name: "Vinblastine", keys: "vbl velbe" }, { name: "Vinorelbine", keys: "vnr navelbine" },
+    { name: "Oxaliplatin", keys: "oxa eloxatin" }, { name: "Carmustine", keys: "bcnu bicnu" },
+    { name: "Docetaxel", keys: "taxotere" }, { name: "Paclitaxel", keys: "tax taxol" },
+    { name: "Dactinomycin", keys: "actd cosmegen" }, { name: "Doxorubicin", keys: "adr adriamycin" },
+    { name: "Idarubicin", keys: "ida idamycin" }, { name: "Mitomycin", keys: "mmc mitomycin-c" },
+    { name: "Mitoxantrone", keys: "novantrone" }, { name: "Bendamustine", keys: "treanda" },
+    { name: "Bleomycin", keys: "bleo" }, { name: "Busulfan", keys: "myleran" },
+    { name: "Carboplatin", keys: "cbdca" }, { name: "Carfilzomib", keys: "kyprolis" },
+    { name: "Cisplatin", keys: "cddp" }, { name: "Cyclophosphamide", keys: "ctx cyc" },
+    { name: "Dacarbazine", keys: "dtic" }, { name: "Etoposide", keys: "vp-16" },
+    { name: "Fluorouracil", keys: "5fu 5-fu" }, { name: "Gemcitabine", keys: "gemzar" },
+    { name: "Ifosfamide", keys: "ifo" }, { name: "Irinotecan", keys: "cpt-11 camptosar" },
+    { name: "Melphalan", keys: "alkeran" }, { name: "Topotecan", keys: "hycamtin" },
+    { name: "Cytarabine", keys: "ara-c" }, { name: "Fludarabine", keys: "fludara" },
+    { name: "Methotrexate", keys: "mtx" }, { name: "Pemetrexed", keys: "alimta" },
+    { name: "Asparaginase", keys: "elspar" }, { name: "Bortezomib", keys: "btz velcade" },
+    { name: "Arsenic trioxide", keys: "ato" }, { name: "Cabazitaxel", keys: "jevtana" }
+];
 
         async function init() {
             try {
@@ -118,13 +137,25 @@
 
         function smartSearchDrug(val) {
             const resDiv = document.getElementById('drugResults');
-            if (val.length >= 2) {
-                const filtered = drugMaster.filter(d => d.toLowerCase().includes(val.toLowerCase()));
-                resDiv.innerHTML = filtered.map(d => `<div class="drug-item" onclick="selectDrug('${d}')">${d}</div>`).join('');
-                resDiv.style.display = filtered.length ? 'block' : 'none';
-            } else { resDiv.style.display = 'none'; }
-        }
+            const searchVal = val.toLowerCase().trim();
 
+            if (searchVal.length >= 3) { // เริ่มทำงานเมื่อพิมพ์ 3 ตัวอักษรขึ้นไป
+            const filtered = drugList.filter(item => 
+            item.name.toLowerCase().includes(searchVal) || 
+            item.keys.toLowerCase().includes(searchVal)
+        );
+
+        resDiv.innerHTML = filtered.map(item => `
+            <div class="drug-item" onclick="selectDrug('${item.name}')" style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;">
+                <div style="font-weight: bold; color: #015958;">${item.name}</div>
+                <div style="font-size: 0.7rem; color: #888;">Keywords: ${item.keys}</div>
+            </div>
+        `).join('');
+        resDiv.style.display = filtered.length ? 'block' : 'none';
+    } else {
+        resDiv.style.display = 'none';
+    }
+}
         function selectDrug(name) {
             document.getElementById('drugInput').value = name;
             document.getElementById('drugResults').style.display = 'none';
@@ -136,26 +167,28 @@
             document.getElementById('g' + g).classList.add('active');
         }
 
-        async function submitReplacement() {
-            const kitNum = document.getElementById('kitNum').value;
-            const ward = document.getElementById('wardName').value;
-            const drug = document.getElementById('drugInput').value;
-            const pos = document.getElementById('position').value;
-            const grade = document.getElementById('grade').value; // ✨ แก้ไขตรงนี้ให้ตรงกับ ID
+        //
+async function submitReplacement() {
+    const kitNum = document.getElementById('kitNum').value;
+    const ward = document.getElementById('wardName').value;
+    const drug = document.getElementById('drugInput').value;
+    const pos = document.getElementById('position').value;
+    const grade = document.getElementById('grade').value; // ✨ ต้องตรงกับ ID ใน HTML
 
-            if (!kitNum || !drug || grade === "") {
-                alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วน รวมถึงระดับความรุนแรงด้วยครับ");
-                return;
-            }
+    if (!kitNum || !drug || grade === "") {
+        alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วนครับ");
+        return;
+    }
 
-            try {
-                const msg = `REQ_REPLACEMENT|EX-${kitNum}|${ward}|${drug}|${pos}|${grade}`;
-                await liff.sendMessages([{ "type": "text", "text": msg }]);
-                liff.closeWindow();
-            } catch (err) {
-                alert("❌ ส่งข้อมูลไม่สำเร็จ: " + err.message + "\nตรวจสอบว่าคุณเปิดสิทธิ์ chat_message.write ใน LINE Developers หรือยัง");
-            }
-        }
-    </script>
+    try {
+        // รูปแบบข้อความที่ส่งไปให้ไฟล์ 02_Flow_Nurse.gs ประมวลผล
+        const msg = `REQ_REPLACEMENT|EX-${kitNum}|${ward}|${drug}|${pos}|${grade}`;
+        await liff.sendMessages([{ "type": "text", "text": msg }]); //
+        liff.closeWindow();
+    } catch (err) {
+        alert("❌ Error: " + err.message);
+    }
+}
+</script>
 </body>
 </html>
