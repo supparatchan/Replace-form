@@ -19,8 +19,6 @@
         .drug-results { border: 1px solid #ddd; border-top: none; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: 100%; z-index: 10; }
         .drug-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .drug-item:hover { background-color: #F5F5F5; }
-        
-        /* สไตล์ Grade Cards */
         .grade-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
         .grade-item { background-color: #ffffff; border: 2px solid #E0E0E0; border-radius: 12px; padding: 12px 20px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #666; }
         .grade-item.active { background-color: #015958 !important; color: #ffffff !important; border-color: #015958; transform: scale(1.02); }
@@ -49,8 +47,9 @@
                     <div class="field">
                         <label class="label">หอผู้ป่วย</label>
                         <div class="control">
-                            <input class="input" type="text" id="wardName" placeholder="กรอกเลข Kit เพื่อค้นหาวอร์ด..." readonly onclick="this.readOnly=false">
+                            <input class="input" type="text" id="wardName" placeholder="กรอกเลข Kit เพื่อค้นหาวอร์ด..." readonly onclick="enableWardEdit()">
                         </div>
+                        <p class="help is-info" id="wardStatus">ระบบจะค้นหาวอร์ดจากเลข Kit อัตโนมัติ</p>
                     </div>
 
                     <hr>
@@ -65,16 +64,7 @@
 
                     <div class="field">
                         <label class="label">ตำแหน่งที่ให้ยา</label>
-                        <div class="control">
-                            <div class="select is-fullwidth">
-                                <select id="position">
-                                    <option value="หลังมือ">หลังมือ (Dorsum of hand)</option>
-                                    <option value="ข้อมือ">ข้อมือ (Wrist)</option>
-                                    <option value="หน้าแขน">หน้าแขน (Forearm)</option>
-                                    <option value="ตำแหน่งอื่น">ตำแหน่งอื่น</option>
-                                </select>
-                            </div>
-                        </div>
+                        <div class="control"><div class="select is-fullwidth"><select id="position"><option value="หลังมือ">หลังมือ (Dorsum of hand)</option><option value="ข้อมือ">ข้อมือ (Wrist)</option><option value="หน้าแขน">หน้าแขน (Forearm)</option><option value="ตำแหน่งอื่น">ตำแหน่งอื่น</option></select></div></div>
                     </div>
 
                     <div class="field">
@@ -89,7 +79,7 @@
                         <input type="hidden" id="grade" value="">
                     </div>
 
-                    <button class="button is-primary is-fullwidth is-large mt-5" onclick="submitReplacement()">
+                    <button class="button is-primary is-fullwidth is-large mt-5" id="submitBtn" onclick="submitReplacement()">
                         🚀 ส่งคำขอเบิก Kit
                     </button>
                 </div>
@@ -98,94 +88,83 @@
     </section>
 
     <script>
-     //
-const drugList = [
-    { name: "Vinblastine", keys: "vbl velbe" }, { name: "Vinorelbine", keys: "vnr navelbine" },
-    { name: "Oxaliplatin", keys: "oxa eloxatin" }, { name: "Carmustine", keys: "bcnu bicnu" },
-    { name: "Docetaxel", keys: "taxotere" }, { name: "Paclitaxel", keys: "tax taxol" },
-    { name: "Dactinomycin", keys: "actd cosmegen" }, { name: "Doxorubicin", keys: "adr adriamycin" },
-    { name: "Idarubicin", keys: "ida idamycin" }, { name: "Mitomycin", keys: "mmc mitomycin-c" },
-    { name: "Mitoxantrone", keys: "novantrone" }, { name: "Bendamustine", keys: "treanda" },
-    { name: "Bleomycin", keys: "bleo" }, { name: "Busulfan", keys: "myleran" },
-    { name: "Carboplatin", keys: "cbdca" }, { name: "Carfilzomib", keys: "kyprolis" },
-    { name: "Cisplatin", keys: "cddp" }, { name: "Cyclophosphamide", keys: "ctx cyc" },
-    { name: "Dacarbazine", keys: "dtic" }, { name: "Etoposide", keys: "vp-16" },
-    { name: "Fluorouracil", keys: "5fu 5-fu" }, { name: "Gemcitabine", keys: "gemzar" },
-    { name: "Ifosfamide", keys: "ifo" }, { name: "Irinotecan", keys: "cpt-11 camptosar" },
-    { name: "Melphalan", keys: "alkeran" }, { name: "Topotecan", keys: "hycamtin" },
-    { name: "Cytarabine", keys: "ara-c" }, { name: "Fludarabine", keys: "fludara" },
-    { name: "Methotrexate", keys: "mtx" }, { name: "Pemetrexed", keys: "alimta" },
-    { name: "Asparaginase", keys: "elspar" }, { name: "Bortezomib", keys: "btz velcade" },
-    { name: "Arsenic trioxide", keys: "ato" }, { name: "Cabazitaxel", keys: "jevtana" }
-];
+        const drugList = [
+            { name: "Vinblastine", keys: "vbl velbe" }, { name: "Vinorelbine", keys: "vnr navelbine" },
+            { name: "Oxaliplatin", keys: "oxa eloxatin" }, { name: "Carmustine", keys: "bcnu bicnu" },
+            { name: "Docetaxel", keys: "taxotere" }, { name: "Paclitaxel", keys: "tax taxol" },
+            { name: "Dactinomycin", keys: "actd cosmegen" }, { name: "Doxorubicin", keys: "adr adriamycin" },
+            { name: "Idarubicin", keys: "ida idamycin" }, { name: "Mitomycin", keys: "mmc mitomycin-c" },
+            { name: "Mitoxantrone", keys: "novantrone" }, { name: "Bendamustine", keys: "treanda" },
+            { name: "Bleomycin", keys: "bleo" }, { name: "Busulfan", keys: "myleran" },
+            { name: "Carboplatin", keys: "cbdca" }, { name: "Carfilzomib", keys: "kyprolis" },
+            { name: "Cisplatin", keys: "cddp" }, { name: "Cyclophosphamide", keys: "ctx cyc" },
+            { name: "Dacarbazine", keys: "dtic" }, { name: "Etoposide", keys: "vp-16" },
+            { name: "Fluorouracil", keys: "5fu 5-fu" }, { name: "Gemcitabine", keys: "gemzar" },
+            { name: "Ifosfamide", keys: "ifo" }, { name: "Irinotecan", keys: "cpt-11 camptosar" },
+            { name: "Melphalan", keys: "alkeran" }, { name: "Topotecan", keys: "hycamtin" },
+            { name: "Cytarabine", keys: "ara-c" }, { name: "Fludarabine", keys: "fludara" },
+            { name: "Methotrexate", keys: "mtx" }, { name: "Pemetrexed", keys: "alimta" },
+            { name: "Asparaginase", keys: "elspar" }, { name: "Bortezomib", keys: "btz velcade" },
+            { name: "Arsenic trioxide", keys: "ato" }, { name: "Cabazitaxel", keys: "jevtana" }
+        ];
 
-// 🚩 ใส่ Web App URL ที่ได้จาก GAS ตรงนี้ครับ
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyCE7cYQuZaOWBd_Pd36nEid2Zts259j-8r-cPtbX3EtbofLuZjmK4JaG8BQjYyJTdg/exec"; 
-let kitInventory = [];
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyCE7cYQuZaOWBd_Pd36nEid2Zts259j-8r-cPtbX3EtbofLuZjmK4JaG8BQjYyJTdg/exec"; 
+        let kitInventory = [];
 
-async function init() {
-    try {
-        await liff.init({ liffId: "2009181600-gwOEGw9p" }); 
-        if (!liff.isLoggedIn()) liff.login();
-        
-        // 🚀 โหลดข้อมูลวอร์ดจาก GAS เตรียมไว้
-        const response = await fetch(`${GAS_API_URL}?action=getInventory`);
-        kitInventory = await response.json();
-        console.log("Inventory Loaded:", kitInventory.length, "kits");
-        
-    } catch (err) { console.error("LIFF/Fetch Error", err); }
-}
-init();
-
-// 🔍 ฟังก์ชันค้นหาวอร์ดจากข้อมูลจริง
-function checkKitID(val) {
-    const wardInput = document.getElementById('wardName');
-    
-    if (val.length === 3) {
-        const fullId = "EX-" + val;
-        wardInput.value = "กำลังค้นหา...";
-        
-        // ค้นหาในรายการที่โหลดมาจาก GAS
-        const match = kitInventory.find(item => item.kitId === fullId);
-        
-        if (match) {
-            wardInput.value = match.ward;
-        } else {
-            wardInput.value = "";
-            wardInput.placeholder = "ไม่พบรหัส Kit นี้ กรุณากรอกเอง...";
-            wardInput.readOnly = false; // ปลดล็อกให้กรอกเองกรณีไม่เจอ
+        async function init() {
+            try {
+                await liff.init({ liffId: "2009181600-gwOEGw9p" }); 
+                if (!liff.isLoggedIn()) liff.login();
+                
+                // โหลดข้อมูลวอร์ดจริงจาก GAS
+                const response = await fetch(`${GAS_API_URL}?action=getInventory`);
+                kitInventory = await response.json();
+                console.log("Data Loaded Ready");
+            } catch (err) { console.error("Init Error", err); }
         }
-    }
-}
+        init();
 
+        // 🔍 ค้นหาวอร์ดจากข้อมูลจริงที่ดึงจาก Sheet
         function checkKitID(val) {
+            const wardInput = document.getElementById('wardName');
+            const statusLabel = document.getElementById('wardStatus');
+            
             if (val.length === 3) {
-                document.getElementById('wardName').value = "กำลังค้นหา..."; // จำลอง
-                setTimeout(() => { document.getElementById('wardName').value = "ภูมิสิริ 19C"; }, 500);
+                const fullId = "EX-" + val;
+                wardInput.value = "🔍 กำลังค้นหา...";
+                
+                const match = kitInventory.find(item => item.kitId === fullId);
+                
+                if (match && match.ward) {
+                    wardInput.value = match.ward;
+                    wardInput.readOnly = true;
+                    statusLabel.innerText = "✅ พบวอร์ดผู้ถือครอง Kit";
+                } else {
+                    wardInput.value = "";
+                    wardInput.readOnly = false;
+                    wardInput.placeholder = "ไม่พบข้อมูล กรุณากรอกชื่อวอร์ด...";
+                    statusLabel.innerText = "⚠️ ไม่พบ Kit ในระบบ (เปิดให้กรอกเอง)";
+                    wardInput.focus();
+                }
             }
+        }
+
+        function enableWardEdit() {
+            const wardInput = document.getElementById('wardName');
+            wardInput.readOnly = false;
+            wardInput.placeholder = "กรุณากรอกชื่อวอร์ด...";
         }
 
         function smartSearchDrug(val) {
             const resDiv = document.getElementById('drugResults');
             const searchVal = val.toLowerCase().trim();
+            if (searchVal.length >= 3) {
+                const filtered = drugList.filter(item => item.name.toLowerCase().includes(searchVal) || item.keys.toLowerCase().includes(searchVal));
+                resDiv.innerHTML = filtered.map(item => `<div class="drug-item" onclick="selectDrug('${item.name}')"><strong>${item.name}</strong><br><small>Keywords: ${item.keys}</small></div>`).join('');
+                resDiv.style.display = filtered.length ? 'block' : 'none';
+            } else { resDiv.style.display = 'none'; }
+        }
 
-            if (searchVal.length >= 3) { // เริ่มทำงานเมื่อพิมพ์ 3 ตัวอักษรขึ้นไป
-            const filtered = drugList.filter(item => 
-            item.name.toLowerCase().includes(searchVal) || 
-            item.keys.toLowerCase().includes(searchVal)
-        );
-
-        resDiv.innerHTML = filtered.map(item => `
-            <div class="drug-item" onclick="selectDrug('${item.name}')" style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;">
-                <div style="font-weight: bold; color: #015958;">${item.name}</div>
-                <div style="font-size: 0.7rem; color: #888;">Keywords: ${item.keys}</div>
-            </div>
-        `).join('');
-        resDiv.style.display = filtered.length ? 'block' : 'none';
-    } else {
-        resDiv.style.display = 'none';
-    }
-}
         function selectDrug(name) {
             document.getElementById('drugInput').value = name;
             document.getElementById('drugResults').style.display = 'none';
@@ -197,49 +176,35 @@ function checkKitID(val) {
             document.getElementById('g' + g).classList.add('active');
         }
 
-        //
-async function submitReplacement() {
-    // 1. ดึง Element ของปุ่มมาเพื่อทำ Guard
-    const submitBtn = document.querySelector('button.is-primary'); 
-    const kitNum = document.getElementById('kitNum').value;
-    const ward = document.getElementById('wardName').value;
-    const drug = document.getElementById('drugInput').value;
-    const pos = document.getElementById('position').value;
-    const grade = document.getElementById('grade').value;
+        async function submitReplacement() {
+            const submitBtn = document.getElementById('submitBtn');
+            const data = {
+                kitId: "EX-" + document.getElementById('kitNum').value,
+                ward: document.getElementById('wardName').value,
+                drug: document.getElementById('drugInput').value,
+                pos: document.getElementById('position').value,
+                grade: document.getElementById('grade').value
+            };
 
-    // 2. ตรวจสอบความครบถ้วนก่อนเริ่ม Guard
-    if (!kitNum || !drug || grade === "") {
-        alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วนครับ");
-        return;
-    }
+            if (!document.getElementById('kitNum').value || !data.drug || data.grade === "") {
+                alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วนครับ"); return;
+            }
 
-    // 🚩 เริ่มระบบ Guard (ป้องกันการกดซ้ำ)
-    if (submitBtn.disabled) return; // ถ้าปุ่มถูกล็อกอยู่แล้ว ไม่ให้ทำงานต่อ
-    
-    submitBtn.disabled = true; // ล็อกปุ่มทันที
-    submitBtn.classList.add('is-loading'); // เพิ่ม Loading Spinner (ถ้าใช้ Bulma)
-    submitBtn.innerText = "กำลังบันทึกข้อมูล..."; 
+            submitBtn.disabled = true;
+            submitBtn.classList.add('is-loading');
+            submitBtn.innerText = "กำลังบันทึกข้อมูล...";
 
-    try {
-        // รูปแบบข้อความที่ส่งไปให้ไฟล์ 02_Flow_Nurse.gs ประมวลผล
-        const msg = `REQ_REPLACEMENT|EX-${kitNum}|${ward}|${drug}|${pos}|${grade}`;
-        
-        // ส่งข้อความเข้าห้องแชท
-        await liff.sendMessages([{ "type": "text", "text": msg }]); 
-        
-        // ปิดหน้าจอทันทีเมื่อส่งสำเร็จ
-        liff.closeWindow();
-        
-    } catch (err) {
-        // 🚩 คลายล็อก Guard กรณีส่งไม่สำเร็จ เพื่อให้ผู้ใช้กดใหม่ได้
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('is-loading');
-        submitBtn.innerText = "🚀 ส่งคำขอเบิก Kit";
-        
-        console.error("LIFF Send Error:", err);
-        alert("❌ ไม่สามารถส่งข้อมูลได้: " + err.message);
-    }
-}
-</script>
+            try {
+                const msg = `REQ_REPLACEMENT|${data.kitId}|${data.ward}|${data.drug}|${data.pos}|${data.grade}`;
+                await liff.sendMessages([{ "type": "text", "text": msg }]);
+                liff.closeWindow();
+            } catch (err) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('is-loading');
+                submitBtn.innerText = "🚀 ส่งคำขอเบิก Kit";
+                alert("❌ เกิดข้อผิดพลาด: " + err.message);
+            }
+        }
+    </script>
 </body>
 </html>
