@@ -169,24 +169,45 @@ const drugList = [
 
         //
 async function submitReplacement() {
+    // 1. ดึง Element ของปุ่มมาเพื่อทำ Guard
+    const submitBtn = document.querySelector('button.is-primary'); 
     const kitNum = document.getElementById('kitNum').value;
     const ward = document.getElementById('wardName').value;
     const drug = document.getElementById('drugInput').value;
     const pos = document.getElementById('position').value;
-    const grade = document.getElementById('grade').value; // ✨ ต้องตรงกับ ID ใน HTML
+    const grade = document.getElementById('grade').value;
 
+    // 2. ตรวจสอบความครบถ้วนก่อนเริ่ม Guard
     if (!kitNum || !drug || grade === "") {
         alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วนครับ");
         return;
     }
 
+    // 🚩 เริ่มระบบ Guard (ป้องกันการกดซ้ำ)
+    if (submitBtn.disabled) return; // ถ้าปุ่มถูกล็อกอยู่แล้ว ไม่ให้ทำงานต่อ
+    
+    submitBtn.disabled = true; // ล็อกปุ่มทันที
+    submitBtn.classList.add('is-loading'); // เพิ่ม Loading Spinner (ถ้าใช้ Bulma)
+    submitBtn.innerText = "กำลังบันทึกข้อมูล..."; 
+
     try {
         // รูปแบบข้อความที่ส่งไปให้ไฟล์ 02_Flow_Nurse.gs ประมวลผล
         const msg = `REQ_REPLACEMENT|EX-${kitNum}|${ward}|${drug}|${pos}|${grade}`;
-        await liff.sendMessages([{ "type": "text", "text": msg }]); //
+        
+        // ส่งข้อความเข้าห้องแชท
+        await liff.sendMessages([{ "type": "text", "text": msg }]); 
+        
+        // ปิดหน้าจอทันทีเมื่อส่งสำเร็จ
         liff.closeWindow();
+        
     } catch (err) {
-        alert("❌ Error: " + err.message);
+        // 🚩 คลายล็อก Guard กรณีส่งไม่สำเร็จ เพื่อให้ผู้ใช้กดใหม่ได้
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('is-loading');
+        submitBtn.innerText = "🚀 ส่งคำขอเบิก Kit";
+        
+        console.error("LIFF Send Error:", err);
+        alert("❌ ไม่สามารถส่งข้อมูลได้: " + err.message);
     }
 }
 </script>
