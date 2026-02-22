@@ -119,14 +119,44 @@ const drugList = [
     { name: "Arsenic trioxide", keys: "ato" }, { name: "Cabazitaxel", keys: "jevtana" }
 ];
 
-        async function init() {
-            try {
-                // 🚩 อย่าลืมเปลี่ยนเป็น LIFF ID ของคุณ
-                await liff.init({ liffId: "2009181600-gwOEGw9p" }); 
-                if (!liff.isLoggedIn()) liff.login();
-            } catch (err) { console.error("LIFF Init Error", err); }
+// 🚩 ใส่ Web App URL ที่ได้จาก GAS ตรงนี้ครับ
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyCE7cYQuZaOWBd_Pd36nEid2Zts259j-8r-cPtbX3EtbofLuZjmK4JaG8BQjYyJTdg/exec"; 
+let kitInventory = [];
+
+async function init() {
+    try {
+        await liff.init({ liffId: "2009181600-gwOEGw9p" }); 
+        if (!liff.isLoggedIn()) liff.login();
+        
+        // 🚀 โหลดข้อมูลวอร์ดจาก GAS เตรียมไว้
+        const response = await fetch(`${GAS_API_URL}?action=getInventory`);
+        kitInventory = await response.json();
+        console.log("Inventory Loaded:", kitInventory.length, "kits");
+        
+    } catch (err) { console.error("LIFF/Fetch Error", err); }
+}
+init();
+
+// 🔍 ฟังก์ชันค้นหาวอร์ดจากข้อมูลจริง
+function checkKitID(val) {
+    const wardInput = document.getElementById('wardName');
+    
+    if (val.length === 3) {
+        const fullId = "EX-" + val;
+        wardInput.value = "กำลังค้นหา...";
+        
+        // ค้นหาในรายการที่โหลดมาจาก GAS
+        const match = kitInventory.find(item => item.kitId === fullId);
+        
+        if (match) {
+            wardInput.value = match.ward;
+        } else {
+            wardInput.value = "";
+            wardInput.placeholder = "ไม่พบรหัส Kit นี้ กรุณากรอกเอง...";
+            wardInput.readOnly = false; // ปลดล็อกให้กรอกเองกรณีไม่เจอ
         }
-        init();
+    }
+}
 
         function checkKitID(val) {
             if (val.length === 3) {
