@@ -1,410 +1,244 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>เบิก Kit ทดแทน - ChemoKit Care</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เบิก Kit ทดแทน</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500&display=swap" rel="stylesheet">
 
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
-
-  <style>
-    body { background-color: #F0F4F3; font-family: 'Kanit', sans-serif; }
-    .card { border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; }
-    .pastel-header { background-color: #015958; color: white; border-radius: 16px 16px 0 0; padding: 16px; text-align: center; }
-    .label { color: #2f2f2f; font-weight: 600; }
-    .button.is-primary { background-color: #015958; color: #ffffff; border: none; font-weight: 700; }
-    .button.is-primary:hover { background-color: #014140; }
-
-    .input-prefix { background-color: #E0E0E0; border-radius: 10px 0 0 10px; padding: 8px 14px; font-weight: 700; display: flex; align-items: center; }
-    .input-main { border-radius: 0 10px 10px 0 !important; }
-    .help-link { font-size: 0.85rem; color: #1976d2; cursor: pointer; text-decoration: underline; }
-
-    /* Drug results dropdown */
-    .drug-wrap { position: relative; }
-    .drug-results {
-      border: 1px solid #ddd; border-top: none;
-      max-height: 210px; overflow-y: auto;
-      display: none; background: white;
-      position: absolute; width: 100%;
-      z-index: 9999;
-      border-radius: 0 0 12px 12px;
-    }
-    .drug-item { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #eee; }
-    .drug-item:hover { background-color: #F5F5F5; }
-    .drug-item small { color: #666; }
-
-    /* Grade cards */
-    .grade-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
-    .grade-card {
-      background: #fff;
-      border: 2px solid #e6e6e6;
-      border-radius: 14px;
-      padding: 12px 14px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-    .grade-card:hover { transform: translateY(-1px); }
-    .grade-card.active {
-      border-color: #015958;
-      background: #e8f3f2;
-    }
-    .grade-badge {
-      min-width: 32px; height: 32px; border-radius: 999px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800;
-      background: #015958; color: #fff;
-    }
-    .grade-title { font-weight: 800; color: #015958; }
-    .grade-desc { font-size: 0.92rem; color: #555; margin-top: 2px; }
-
-    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.8rem; background:#f3f3f3; color:#444; }
-    .warn { color: #d32f2f; font-weight: 700; }
-  </style>
+<style>
+body { background:#F0F4F3; font-family:'Kanit',sans-serif; }
+.card { border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,.1); }
+.header { background:#015958; color:white; padding:16px; border-radius:16px 16px 0 0; text-align:center; }
+.grade-box { border:2px solid #ddd; padding:12px; border-radius:12px; cursor:pointer; }
+.grade-box.active { background:#015958; color:white; border-color:#015958; }
+.drug-results { border:1px solid #ddd; max-height:160px; overflow-y:auto; display:none; background:white; position:absolute; width:100%; z-index:10; }
+.drug-item { padding:8px; cursor:pointer; }
+.drug-item:hover { background:#f1f1f1; }
+</style>
 </head>
 
 <body>
 <section class="section">
-  <div class="container">
-    <div class="card">
-      <div class="pastel-header">
-        <h1 class="title is-5 has-text-white">📋 แบบฟอร์มขอเบิก Kit ทดแทน</h1>
-        <p class="is-size-7">กรอกให้ครบ: Kit ID → หอผู้ป่วย → ชื่อยา → ตำแหน่ง → Grade</p>
-      </div>
+<div class="container">
+<div class="card">
 
-      <div class="card-content">
+<div class="header">
+<h4 class="title is-5 has-text-white">📋 แบบฟอร์มขอเบิก Kit ทดแทน</h4>
+</div>
 
-        <!-- Kit ID -->
-        <div class="field">
-          <label class="label">รหัส Kit ID (เลข 3 หลัก)</label>
-          <div class="field has-addons">
-            <div class="control"><span class="input-prefix">EX-</span></div>
-            <div class="control is-expanded">
-              <!-- ✅ เปลี่ยนเป็น type="text" เพื่อคงเลข 0 นำหน้า -->
-              <input class="input input-main" type="text" id="kitNum" inputmode="numeric" maxlength="3"
-                     placeholder="เช่น 001" oninput="onKitChange(this.value)">
-            </div>
-          </div>
-          <p class="help">พิมพ์ 3 หลัก ระบบจะค้นหาหอผู้ป่วยให้จากคลัง (ถ้าไม่พบจะเปิดให้กรอกเอง)</p>
-        </div>
+<div class="card-content">
 
-        <!-- Ward -->
-        <div class="field">
-          <label class="label">หอผู้ป่วย</label>
-          <div class="control">
-            <input class="input" type="text" id="wardName" placeholder="รอการค้นหา..." readonly>
-          </div>
-          <div class="mt-2">
-            <span class="pill" id="wardStatus">ระบบจะค้นหาอัตโนมัติ</span>
-            &nbsp;&nbsp;
-            <span class="help-link" onclick="enableWardEdit()">แก้ไข/กรอกเอง</span>
-          </div>
-        </div>
+<!-- Kit ID -->
+<div class="field">
+<label class="label">รหัส Kit ID (3 หลัก)</label>
+<input class="input" id="kitNum"
+       type="text"
+       inputmode="numeric"
+       maxlength="3"
+       placeholder="เช่น 015"
+       oninput="onKitChange(this.value)"
+       onblur="onKitBlur()">
+<p class="help" id="kitHelp">ระบบจะค้นหาอัตโนมัติเมื่อครบ 3 หลัก</p>
+</div>
 
-        <hr>
+<!-- Ward -->
+<div class="field">
+<label class="label">หอผู้ป่วย</label>
+<input class="input" id="wardName" readonly>
+</div>
 
-        <!-- Drug -->
-        <div class="field drug-wrap">
-          <label class="label">ชื่อยาที่เกิด Extravasation</label>
-          <div class="control">
-            <input class="input" type="text" id="drugInput" placeholder="พิมพ์ 3–4 ตัวอักษรเพื่อค้นหา..."
-                   oninput="smartSearchDrug(this.value)" autocomplete="off">
-          </div>
-          <div id="drugResults" class="drug-results"></div>
-          <p class="help">ตัวอย่าง: dox / pac / cis / vnr (พิมพ์ 3–4 ตัว ระบบจะแสดงรายการให้เลือก)</p>
-        </div>
+<hr>
 
-        <!-- Position -->
-        <div class="field">
-          <label class="label">ตำแหน่งที่ให้ยา</label>
-          <div class="control">
-            <div class="select is-fullwidth">
-              <select id="position">
-                <option value="หลังมือ">หลังมือ (Dorsum of hand)</option>
-                <option value="ข้อมือ">ข้อมือ (Wrist)</option>
-                <option value="หน้าแขน">หน้าแขน (Forearm)</option>
-                <option value="ข้อพับแขน">ข้อพับแขน (Antecubital)</option>
-                <option value="ตำแหน่งอื่น">ตำแหน่งอื่น</option>
-              </select>
-            </div>
-          </div>
-        </div>
+<!-- Drug -->
+<div class="field" style="position:relative;">
+<label class="label">ชื่อยา</label>
+<input class="input" id="drugInput" placeholder="พิมพ์ชื่อยา 3 ตัวอักษรขึ้นไป"
+       oninput="smartSearchDrug(this.value)">
+<div id="drugResults" class="drug-results"></div>
+</div>
 
-        <!-- Grade -->
-        <div class="field">
-          <label class="label">ระดับความรุนแรง (Grade 1–4)</label>
-          <div class="grade-grid">
-            <div class="grade-card" onclick="setGrade(1)" id="g1">
-              <div>
-                <div class="grade-title">Grade 1</div>
-                <div class="grade-desc">ปวด/แดงเล็กน้อย ไม่มีบวมชัด ไม่มีตุ่มพอง</div>
-              </div>
-              <div class="grade-badge">1</div>
-            </div>
+<!-- Position -->
+<div class="field">
+<label class="label">ตำแหน่งที่ให้ยา</label>
+<div class="select is-fullwidth">
+<select id="position">
+<option value="หลังมือ">หลังมือ</option>
+<option value="ข้อมือ">ข้อมือ</option>
+<option value="หน้าแขน">หน้าแขน</option>
+<option value="อื่นๆ">อื่นๆ</option>
+</select>
+</div>
+</div>
 
-            <div class="grade-card" onclick="setGrade(2)" id="g2">
-              <div>
-                <div class="grade-title">Grade 2</div>
-                <div class="grade-desc">ปวดปานกลาง/บวมชัด เริ่มมีผิวตึง หรือการอักเสบ</div>
-              </div>
-              <div class="grade-badge">2</div>
-            </div>
+<!-- Grade -->
+<div class="field">
+<label class="label">ระดับความรุนแรง</label>
+<div class="columns is-multiline">
 
-            <div class="grade-card" onclick="setGrade(3)" id="g3">
-              <div>
-                <div class="grade-title">Grade 3</div>
-                <div class="grade-desc"><span class="warn">รุนแรง</span>: บวมมาก/ปวดมาก อาจมีตุ่มพอง/แผล</div>
-              </div>
-              <div class="grade-badge">3</div>
-            </div>
+<div class="column is-6">
+<div class="grade-box" onclick="setGrade(1)" id="g1">
+<b>Grade 1</b><br>
+แดงเล็กน้อย / ไม่มีพุพอง
+</div>
+</div>
 
-            <div class="grade-card" onclick="setGrade(4)" id="g4">
-              <div>
-                <div class="grade-title">Grade 4</div>
-                <div class="grade-desc"><span class="warn">วิกฤต</span>: เนื้อตาย/แผลลึก/ต้องประเมินศัลยกรรม</div>
-              </div>
-              <div class="grade-badge">4</div>
-            </div>
-          </div>
+<div class="column is-6">
+<div class="grade-box" onclick="setGrade(2)" id="g2">
+<b>Grade 2</b><br>
+บวมปวด / ผิวหนังตึง
+</div>
+</div>
 
-          <input type="hidden" id="grade" value="">
-          <p class="help">เลือก 1 ค่าเท่านั้น</p>
-        </div>
+<div class="column is-6">
+<div class="grade-box" onclick="setGrade(3)" id="g3">
+<b>Grade 3</b><br>
+พุพอง / ผิวหนังเสียหาย
+</div>
+</div>
 
-        <button class="button is-primary is-fullwidth is-large mt-5" id="submitBtn" onclick="submitReplacement()">
-          🚀 ส่งคำขอเบิก Kit
-        </button>
+<div class="column is-6">
+<div class="grade-box" onclick="setGrade(4)" id="g4">
+<b>Grade 4</b><br>
+เนื้อตาย / ต้องผ่าตัด
+</div>
+</div>
 
-      </div>
-    </div>
-  </div>
+</div>
+<input type="hidden" id="grade">
+</div>
+
+<button class="button is-primary is-fullwidth" onclick="submitReplacement()">
+🚀 ส่งคำขอ
+</button>
+
+</div>
+</div>
+</div>
 </section>
 
 <script>
-  // =========================
-  // CONFIG
-  // =========================
-  const LIFF_ID = "2009181600-gwOEGw9p"; // nurse replacement LIFF
-  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyCE7cYQuZaOWBd_Pd36nEid2Zts259j-8r-cPtbX3EtbofLuZjmK4JaG8BQjYyJTdg/exec";
 
-  let kitInventory = [];
-  let drugList = []; // [{name, keys}]
+const LIFF_ID = "2009181600-gwOEGw9p";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxiR4ELkbirrkVy_48Aa217LIoKTDQWLJfbJm0OqnorPD3G_eV6bN-QpkwHDAIVv2t_/exec";
 
-  // =========================
-  // INIT
-  // =========================
-  async function init() {
-    await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) liff.login();
+let kitInventory = [];
+let selectedDrug = "";
 
-    // Load inventory (ward lookup)
-    try {
-      const rInv = await fetch(`${GAS_API_URL}?action=getInventory`, { cache: "no-store" });
-      const inv = await rInv.json();
-      kitInventory = (Array.isArray(inv) ? inv : []).map(x => ({
-        kitId: String(x.kitId || x.KitID || x.kit_id || "").toUpperCase().trim(),
-        ward: String(x.ward || x.Ward || x.assigned_ward_id || x.current_location || x.location || "").trim()
-      }));
-    } catch (e) {
-      console.error("Inventory load failed", e);
-      kitInventory = [];
-    }
+async function init() {
+  await liff.init({ liffId: LIFF_ID });
+  if (!liff.isLoggedIn()) liff.login();
+  const res = await fetch(GAS_API_URL);
+  kitInventory = await res.json();
+}
+init();
 
-    // Load drug list (type-ahead)
-    try {
-      const rDrug = await fetch(`${GAS_API_URL}?action=getDrugs`, { cache: "no-store" });
-      const d = await rDrug.json();
-      drugList = Array.isArray(d) ? d.map(x => ({
-        name: String(x.name || x.display || "").trim(),
-        keys: String(x.keys || x.keywords || x.alias || "").toLowerCase().trim()
-      })).filter(x => x.name) : [];
-    } catch (e) {
-      console.warn("Drug list load failed, fallback to embedded list", e);
-      // fallback minimal list (คุณสามารถเติมเพิ่มได้)
-      drugList = [
-        { name: "Doxorubicin", keys: "doxo adriamycin adr" },
-        { name: "Paclitaxel", keys: "pac taxol tax" },
-        { name: "Docetaxel", keys: "doce taxotere" },
-        { name: "Cisplatin", keys: "cis cddp" },
-        { name: "Vinorelbine", keys: "vnr navelbine" },
-        { name: "Oxaliplatin", keys: "oxa eloxatin" }
-      ];
-    }
+/* -----------------------
+   Kit ID Logic (Fixed)
+------------------------ */
 
-    console.log("LIFF ready");
+function normalizeDigits(v){
+  return String(v||"").replace(/\D/g,"").slice(0,3);
+}
+
+function onKitChange(val){
+  const digits = normalizeDigits(val);
+  const input = document.getElementById("kitNum");
+  input.value = digits;
+
+  if(digits.length===3){
+    lookupWard(digits);
+  } else {
+    document.getElementById("wardName").value="";
+  }
+}
+
+function onKitBlur(){
+  const input=document.getElementById("kitNum");
+  const digits=normalizeDigits(input.value);
+
+  if(digits.length>0 && digits.length<3){
+    const padded=digits.padStart(3,"0");
+    input.value=padded;
+    lookupWard(padded);
+  }
+}
+
+function lookupWard(digits){
+  const fullId="EX-"+digits;
+  const match=kitInventory.find(k=>k.kitId===fullId);
+  const wardInput=document.getElementById("wardName");
+
+  if(match && match.ward){
+    wardInput.value=match.ward;
+    wardInput.readOnly=true;
+  } else {
+    wardInput.value="";
+    wardInput.readOnly=false;
+    wardInput.placeholder="กรอกชื่อวอร์ด";
+  }
+}
+
+/* -----------------------
+   Drug Search
+------------------------ */
+
+const drugList = [
+"Vinblastine","Vinorelbine","Oxaliplatin","Doxorubicin",
+"Paclitaxel","Cisplatin","Carboplatin","Methotrexate",
+"Irinotecan","Gemcitabine","Cyclophosphamide"
+];
+
+function smartSearchDrug(val){
+  const search=val.toLowerCase();
+  const box=document.getElementById("drugResults");
+  if(search.length<3){ box.style.display="none"; return; }
+
+  const results=drugList.filter(d=>d.toLowerCase().includes(search));
+  box.innerHTML=results.map(d=>`<div class="drug-item" onclick="selectDrug('${d}')">${d}</div>`).join("");
+  box.style.display=results.length?"block":"none";
+}
+
+function selectDrug(name){
+  selectedDrug=name;
+  document.getElementById("drugInput").value=name;
+  document.getElementById("drugResults").style.display="none";
+}
+
+/* -----------------------
+   Grade
+------------------------ */
+
+function setGrade(g){
+  document.getElementById("grade").value=g;
+  document.querySelectorAll(".grade-box").forEach(b=>b.classList.remove("active"));
+  document.getElementById("g"+g).classList.add("active");
+}
+
+/* -----------------------
+   Submit
+------------------------ */
+
+async function submitReplacement(){
+
+  const kit="EX-"+document.getElementById("kitNum").value;
+  const ward=document.getElementById("wardName").value;
+  const drug=document.getElementById("drugInput").value;
+  const pos=document.getElementById("position").value;
+  const grade=document.getElementById("grade").value;
+
+  if(!kit || !ward || !drug || !grade){
+    alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+    return;
   }
 
-  init();
+  const msg=`REQ_REPLACEMENT|${kit}|${ward}|${drug}|${pos}|${grade}`;
+  await liff.sendMessages([{type:"text",text:msg}]);
+  liff.closeWindow();
+}
 
-  // =========================
-  // KIT → WARD LOOKUP
-  // =========================
-  function normalizeKit3(v) {
-    const digits = String(v || "").replace(/\D/g, "").slice(0,3);
-    if (!digits) return "";
-    return digits.padStart(3, "0");
-  }
-
-  function onKitChange(val) {
-    const v3 = normalizeKit3(val);
-    document.getElementById("kitNum").value = v3;
-
-    // Only lookup when got 3 digits
-    if (v3.length === 3) lookupWardByKit(v3);
-    else {
-      setWardState("", "ระบบจะค้นหาอัตโนมัติ", true);
-    }
-  }
-
-  function setWardState(ward, statusText, readonly) {
-    const wardInput = document.getElementById("wardName");
-    const status = document.getElementById("wardStatus");
-
-    wardInput.value = ward || "";
-    wardInput.readOnly = !!readonly;
-
-    status.innerText = statusText || "";
-    status.className = "pill";
-  }
-
-  function enableWardEdit() {
-    const wardInput = document.getElementById("wardName");
-    wardInput.readOnly = false;
-    wardInput.placeholder = "กรุณากรอกชื่อหอผู้ป่วย...";
-    document.getElementById("wardStatus").innerText = "โหมดกรอกเอง";
-  }
-
-  function lookupWardByKit(v3) {
-    const fullId = ("EX-" + v3).toUpperCase().trim();
-    setWardState("🔍 กำลังค้นหา...", "กำลังค้นหาวอร์ดจากคลัง...", true);
-
-    const match = kitInventory.find(item => item.kitId === fullId);
-
-    if (match && match.ward) {
-      setWardState(match.ward, "✅ พบวอร์ดผู้ถือครอง Kit", true);
-    } else {
-      // Not found → allow manual input
-      const wardInput = document.getElementById("wardName");
-      wardInput.value = "";
-      wardInput.readOnly = false;
-      wardInput.placeholder = "ไม่พบในระบบ กรุณากรอกชื่อหอผู้ป่วย...";
-      wardInput.focus();
-      document.getElementById("wardStatus").innerText = "⚠️ ไม่พบ Kit ในคลัง → ให้กรอกเอง";
-    }
-  }
-
-  // =========================
-  // DRUG TYPE-AHEAD (3–4 chars)
-  // =========================
-  function smartSearchDrug(val) {
-    const resDiv = document.getElementById("drugResults");
-    const q = String(val || "").toLowerCase().trim();
-
-    if (q.length < 3) {
-      resDiv.style.display = "none";
-      resDiv.innerHTML = "";
-      return;
-    }
-
-    const filtered = drugList
-      .filter(item =>
-        item.name.toLowerCase().includes(q) ||
-        (item.keys && item.keys.includes(q))
-      )
-      .slice(0, 25);
-
-    if (!filtered.length) {
-      resDiv.innerHTML = `<div class="drug-item"><small>ไม่พบรายการที่ตรงกับ "${q}"</small></div>`;
-      resDiv.style.display = "block";
-      return;
-    }
-
-    resDiv.innerHTML = filtered.map(item => {
-      const k = item.keys ? `<br><small>Keywords: ${item.keys}</small>` : "";
-      return `<div class="drug-item" onclick="selectDrug('${escapeHtml(item.name)}')"><strong>${escapeHtml(item.name)}</strong>${k}</div>`;
-    }).join("");
-
-    resDiv.style.display = "block";
-  }
-
-  function selectDrug(name) {
-    document.getElementById("drugInput").value = name;
-    const resDiv = document.getElementById("drugResults");
-    resDiv.style.display = "none";
-    resDiv.innerHTML = "";
-  }
-
-  // Close dropdown when click outside
-  document.addEventListener("click", (e) => {
-    const wrap = document.querySelector(".drug-wrap");
-    const resDiv = document.getElementById("drugResults");
-    if (!wrap.contains(e.target)) {
-      resDiv.style.display = "none";
-    }
-  });
-
-  function escapeHtml(s) {
-    return String(s || "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  // =========================
-  // GRADE
-  // =========================
-  function setGrade(g) {
-    document.getElementById("grade").value = String(g);
-    [1,2,3,4].forEach(x => {
-      const el = document.getElementById("g" + x);
-      if (el) el.classList.remove("active");
-    });
-    const cur = document.getElementById("g" + g);
-    if (cur) cur.classList.add("active");
-  }
-
-  // =========================
-  // SUBMIT
-  // =========================
-  async function submitReplacement() {
-    const submitBtn = document.getElementById("submitBtn");
-
-    const kit3 = normalizeKit3(document.getElementById("kitNum").value);
-    const kitId = kit3 ? ("EX-" + kit3) : "";
-    const ward = String(document.getElementById("wardName").value || "").trim();
-    const drug = String(document.getElementById("drugInput").value || "").trim();
-    const pos  = String(document.getElementById("position").value || "").trim();
-    const grade = String(document.getElementById("grade").value || "").trim();
-
-    if (!kit3 || kit3.length !== 3) { alert("⚠️ กรุณากรอกรหัส Kit ID ให้ครบ 3 หลัก"); return; }
-    if (!ward) { alert("⚠️ กรุณาระบุหอผู้ป่วย"); return; }
-    if (drug.length < 2) { alert("⚠️ กรุณาเลือกชื่อยา"); return; }
-    if (!grade) { alert("⚠️ กรุณาเลือก Grade 1–4"); return; }
-
-    submitBtn.disabled = true;
-    submitBtn.classList.add("is-loading");
-    submitBtn.innerText = "กำลังบันทึกข้อมูล...";
-
-    try {
-      // format: REQ_REPLACEMENT|oldKitId|ward|drug|pos|grade
-      const msg = `REQ_REPLACEMENT|${kitId}|${ward}|${drug}|${pos}|${grade}`;
-      await liff.sendMessages([{ type: "text", text: msg }]);
-      liff.closeWindow();
-    } catch (err) {
-      console.error(err);
-      submitBtn.disabled = false;
-      submitBtn.classList.remove("is-loading");
-      submitBtn.innerText = "🚀 ส่งคำขอเบิก Kit";
-      alert("❌ เกิดข้อผิดพลาด: " + err.message);
-    }
-  }
 </script>
 </body>
 </html>
