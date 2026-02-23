@@ -79,7 +79,7 @@ async function init() {
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()) liff.login();
     try {
-        const res = await fetch(`${GAS_API_URL}?action=getInventory`);
+        const res = await fetch(`${https://script.google.com/macros/s/AKfycbxiR4ELkbirrkVy_48Aa217LIoKTDQWLJfbJm0OqnorPD3G_eV6bN-QpkwHDAIVv2t_/exec}?action=getInventory`);
         kitInventory = await res.json();
     } catch(e){
         console.error("Inventory fetch error",e);
