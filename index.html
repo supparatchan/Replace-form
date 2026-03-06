@@ -124,14 +124,15 @@ body { background:#F0F4F3; font-family:'Kanit',sans-serif; }
 const LIFF_ID = "2009181600-gwOEGw9p";
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxiR4ELkbirrkVy_48Aa217LIoKTDQWLJfbJm0OqnorPD3G_eV6bN-QpkwHDAIVv2t_/exec";
 
-let kitInventory = [];
 let selectedDrug = "";
+let selectedDrugKey = "";
 
 async function init() {
   await liff.init({ liffId: LIFF_ID });
-  if (!liff.isLoggedIn()) liff.login();
-  const res = await fetch(GAS_API_URL);
-  kitInventory = await res.json();
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
+  }
 }
 init();
 
@@ -143,70 +144,101 @@ function normalizeDigits(v){
   return String(v||"").replace(/\D/g,"").slice(0,3);
 }
 
-function onKitChange(val){
+function onKitChange(val) {
   const digits = normalizeDigits(val);
   const input = document.getElementById("kitNum");
   input.value = digits;
 
-  if(digits.length===3){
+  if (digits.length === 3) {
     lookupWard(digits);
   } else {
-    document.getElementById("wardName").value="";
+    document.getElementById("wardName").value = "";
+    document.getElementById("wardName").readOnly = true;
+    document.getElementById("kitHelp").textContent = "ระบบจะค้นหาอัตโนมัติเมื่อครบ 3 หลัก";
   }
 }
 
-function onKitBlur(){
-  const input=document.getElementById("kitNum");
-  const digits=normalizeDigits(input.value);
+function onKitBlur() {
+  const input = document.getElementById("kitNum");
+  const digits = normalizeDigits(input.value);
 
-  if(digits.length>0 && digits.length<3){
-    const padded=digits.padStart(3,"0");
-    input.value=padded;
+  if (digits.length > 0 && digits.length < 3) {
+    const padded = digits.padStart(3, "0");
+    input.value = padded;
     lookupWard(padded);
   }
 }
 
-function lookupWard(digits){
-  const fullId="EX-"+digits;
-  const match=kitInventory.find(k=>k.kitId===fullId);
-  const wardInput=document.getElementById("wardName");
+async function lookupWard(digits) {
+  const fullId = "EX-" + digits;
+  const wardInput = document.getElementById("wardName");
+  const help = document.getElementById("kitHelp");
 
-  if(match && match.ward){
-    wardInput.value=match.ward;
-    wardInput.readOnly=true;
-  } else {
-    wardInput.value="";
-    wardInput.readOnly=false;
-    wardInput.placeholder="กรอกชื่อวอร์ด";
+  wardInput.value = "";
+  wardInput.placeholder = "กำลังค้นหา...";
+  wardInput.readOnly = true;
+
+  try {
+    const url = `${GAS_API_URL}?action=lookupReplacementKitInfo&oldKitId=${encodeURIComponent(fullId)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data && data.ok) {
+      wardInput.value = data.location_display || data.ward_display || "";
+      wardInput.readOnly = true;
+      help.textContent = `พบ ${fullId} | status: ${data.status || "-"}${data.current_location ? " | current: " + data.current_location : ""}`;
+    } else {
+      wardInput.value = "";
+      wardInput.readOnly = false;
+      wardInput.placeholder = "กรอกชื่อวอร์ด";
+      help.textContent = data && data.message ? data.message : "ไม่พบ kit id นี้ในระบบ";
+    }
+  } catch (err) {
+    wardInput.value = "";
+    wardInput.readOnly = false;
+    wardInput.placeholder = "กรอกชื่อวอร์ด";
+    help.textContent = "ค้นหาไม่สำเร็จ กรุณากรอกชื่อวอร์ดเอง";
+    console.error(err);
+  }
+}
+async function smartSearchDrug(val) {
+  const search = String(val || "").trim();
+  const box = document.getElementById("drugResults");
+
+  selectedDrug = "";
+  selectedDrugKey = "";
+
+  if (search.length < 2) {
+    box.style.display = "none";
+    box.innerHTML = "";
+    return;
+  }
+
+  try {
+    const url = `${GAS_API_URL}?action=searchDrugUniversal&keyword=${encodeURIComponent(search)}`;
+    const res = await fetch(url);
+    const results = await res.json();
+
+    box.innerHTML = (results || []).map(d => {
+      const display = String(d.drug_display || "");
+      const key = String(d.drug_key || display);
+      return `<div class="drug-item" onclick="selectDrug(${JSON.stringify(display)}, ${JSON.stringify(key)})">${display}</div>`;
+    }).join("");
+
+    box.style.display = (results && results.length) ? "block" : "none";
+  } catch (err) {
+    console.error(err);
+    box.innerHTML = "";
+    box.style.display = "none";
   }
 }
 
-/* -----------------------
-   Drug Search
------------------------- */
-
-const drugList = [
-"Vinblastine","Vinorelbine","Oxaliplatin","Doxorubicin",
-"Paclitaxel","Cisplatin","Carboplatin","Methotrexate",
-"Irinotecan","Gemcitabine","Cyclophosphamide"
-];
-
-function smartSearchDrug(val){
-  const search=val.toLowerCase();
-  const box=document.getElementById("drugResults");
-  if(search.length<3){ box.style.display="none"; return; }
-
-  const results=drugList.filter(d=>d.toLowerCase().includes(search));
-  box.innerHTML=results.map(d=>`<div class="drug-item" onclick="selectDrug('${d}')">${d}</div>`).join("");
-  box.style.display=results.length?"block":"none";
+function selectDrug(display, key) {
+  selectedDrug = display;
+  selectedDrugKey = key || display;
+  document.getElementById("drugInput").value = display;
+  document.getElementById("drugResults").style.display = "none";
 }
-
-function selectDrug(name){
-  selectedDrug=name;
-  document.getElementById("drugInput").value=name;
-  document.getElementById("drugResults").style.display="none";
-}
-
 /* -----------------------
    Grade
 ------------------------ */
@@ -221,24 +253,22 @@ function setGrade(g){
    Submit
 ------------------------ */
 
-async function submitReplacement(){
+async function submitReplacement() {
+  const kit = "EX-" + document.getElementById("kitNum").value;
+  const ward = document.getElementById("wardName").value;
+  const drug = selectedDrug || document.getElementById("drugInput").value;
+  const pos = document.getElementById("position").value;
+  const grade = document.getElementById("grade").value;
 
-  const kit="EX-"+document.getElementById("kitNum").value;
-  const ward=document.getElementById("wardName").value;
-  const drug=document.getElementById("drugInput").value;
-  const pos=document.getElementById("position").value;
-  const grade=document.getElementById("grade").value;
-
-  if(!kit || !ward || !drug || !grade){
+  if (!kit || !ward || !drug || !grade) {
     alert("กรุณากรอกข้อมูลให้ครบถ้วน");
     return;
   }
 
-  const msg=`REQ_REPLACEMENT|${kit}|${ward}|${drug}|${pos}|${grade}`;
-  await liff.sendMessages([{type:"text",text:msg}]);
+  const msg = `REQ_REPLACEMENT|${kit}|${ward}|${drug}|${pos}|${grade}`;
+  await liff.sendMessages([{ type: "text", text: msg }]);
   liff.closeWindow();
 }
-
 </script>
 </body>
 </html>
